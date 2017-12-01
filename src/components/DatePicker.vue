@@ -5,7 +5,7 @@
             <header>
                 <button>|&lt;&lt;</button>
                 <button>&lt;</button>
-                <input class="text-month" type="text" name="month" :value="month">
+                <input class="text-month" type="text" name="month" :value="month+1">
                 <input class="text-year" type="text" name="year" :value="year">
                 <button>&gt;</button>
                 <button>&gt;&gt;|</button>
@@ -17,20 +17,20 @@
                     <table>
                         <thead>
                             <tr class="row-header">
-                                <th class="des">星期</th>
-                                <th>日</th>
+                                <th class="des">周</th>
                                 <th>一</th>
                                 <th>二</th>
                                 <th>三</th>
                                 <th>四</th>
                                 <th>五</th>
                                 <th>六</th>
+                                <th>日</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="row" v-for="el in dates">
+                            <tr class="row" v-for="days in dates">
                                 <td></td>
-                                <td v-for="d in el" :class="{gray:isSameMonh(d.month),selected:isSelectedDate(d.date)}" @click="onSelectDate(d)">{{d.date}}</td>
+                                <td v-for="d in days" :class="{gray:isSameMonth(d),selected:isSelectedDate(d)}" @click="onSelectDate(d)">{{d.date}}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -60,15 +60,11 @@ export default {
         keyup() {
 
         },
-        getDate(year, month, date) {
-            var curDate = new Date
-            curDate.setFullYear(year)
-            curDate.setMonth(month)
-            curDate.setDate(date)
-            return curDate
+        newDate(year, month, date) {
+            return new Date(year, month, date)
         },
-        getDatesCount(year, month, date = 1) {
-            var curDate = this.getDate(year, month, date)
+        getDatesCount(year, month) {
+            var curDate = this.newDate(year, month, 1)
 
             /*  生成实际的月份: 由于curMonth会比实际月份小1, 故需加1 */
             curDate.setMonth(month + 1)
@@ -105,69 +101,89 @@ export default {
                 date: date,
             }
         },
-        getDates(year, month, day, date) {
-            var curDate = this.getDate(year, month, date)
-            var dateCount = this.getDatesCount(year, month, date)
-
+        getDates({ year, month, day, date, dateCount }, maxDate = 49) {
+            var curDate = this.newDate(year, month, date)
             var dates = [];
             for (var i = 1; i <= dateCount; i++) {
                 curDate.setDate(i)
-                var oDate = this.getCellDate(year, month + 1, curDate.getDay(), curDate.getDate())
+                var oDate = this.getCellDate(year, month, curDate.getDay(), curDate.getDate())
 
                 dates.push(oDate)
             }
 
-            var preMonthDateCount = this.getDatesCount(year, month - 1)
+            var preDate = this.newDate(year, month - 1, 1)
+            var preYear = preDate.getFullYear()
+            var preMonth = preDate.getMonth()
+            var preMonthDateCount = this.getDatesCount(preYear, preMonth)
             var firstDay = dates[0].day
             var l = 7 + firstDay
             for (; --l;) {
-                var oDate = this.getCellDate(year, month, l % 7, preMonthDateCount--)
+                var oDate = this.getCellDate(year, preMonth, l % 7, preMonthDateCount--)
                 dates.unshift(oDate)
             }
 
             var nextMonthStart = 1
+            var nextDate = this.newDate(year, month + 1, 1)
+            var nextMonth = nextDate.getMonth()
+            var nextYear = nextDate.getFullYear()
             var endDay = dates[dates.length - 1].day
-            var r = 49 - dates.length;
-            for (; r--;) {
-                var oDate = this.getCellDate(year, month + 2, endDay % 7, nextMonthStart++)
+            var nextLen = maxDate - dates.length;
+            for (; nextLen--;) {
+                var oDate = this.getCellDate(nextYear, nextMonth, endDay % 7, nextMonthStart++)
                 dates.push(oDate)
             }
 
             return dates
         },
-        isSameMonh(month) {
-            return month !== this.month + 1
+        isSameMonth({ year, month }) {
+            return !(year == this.year && month == this.month)
         },
-        isSelectedDate(date) {
-            return date === this.date
+        isSelectedDate({ year, month, date }) {
+            return (year == this.year && month == this.month && date == this.date)
         },
         onSelectDate(d) {
-            this.year = d.year
-            this.month = d.month
-            this.date = d.date
+            this.fillDates({
+                year: d.year,
+                month: d.month,
+                day: d.day,
+                date: d.date
+            })
+        },
+        fillDates({ year, month, day, date }) {
+            console.log(year, month, date)
+            var curDate = this.newDate(year, month, date)
+            var dateCount = this.getDatesCount(year, month)
+            var dates = this.getDates({ year, month, day, date, dateCount })
+
+            this.year = curDate.getFullYear()
+            this.month = curDate.getMonth()
+            this.day = curDate.getDay()
+            this.date = curDate.getDate()
+            console.log(curDate.getDate())
+
+            var t = []
+            this.dates = []
+            dates.forEach((el, i) => {
+                t.push(el)
+                if (i !== 0 && (i + 1) % 7 === 0) {
+                    this.dates.push(t)
+                    t = []
+                }
+            })
         }
     },
     computed: {
         selectedDate() {
-            return this.year + '-' + this.month + '-' + this.date
+            return (this.year) + '-' + (this.month + 1) + '-' + this.date
         }
     },
     mounted() {
         var date = new Date()
-        this.year = 1900 + date.getYear()
-        this.month = date.getMonth()
-        this.day = date.getDay()
-        this.date = date.getDate()
-
-        var dates = this.getDates(this.year, this.month, this.day, this.date)
-        var t = []
-        this.dates = []
-        dates.forEach((el, i) => {
-            t.push(el)
-            if (i !== 0 && (i + 1) % 7 === 0) {
-                this.dates.push(t)
-                t = []
-            }
+        this.fillDates({
+            year: date.getFullYear(),
+            month: date.getMonth(),
+            day: date.getDay(),
+            date: date.getDate()
         })
     }
 }
@@ -199,8 +215,6 @@ export default {
     width: 100px;
 }
 
-.text-year {}
-
 .date table {
     width: 100%;
     border-collapse: collapse;
@@ -220,7 +234,7 @@ export default {
 }
 
 .des {
-    width: 50px;
+    width: 30px;
 }
 
 .gray {

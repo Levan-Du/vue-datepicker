@@ -104,7 +104,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 const app = new __WEBPACK_IMPORTED_MODULE_0_vue___default.a({
     el: '#app',
-    components: { DatePicker: __WEBPACK_IMPORTED_MODULE_1__components_DatePicker_vue__["a" /* default */] }
+    components: { Datepicker: __WEBPACK_IMPORTED_MODULE_1__components_DatePicker_vue__["a" /* default */] }
 });
 
 /***/ }),
@@ -11252,7 +11252,7 @@ exports = module.exports = __webpack_require__(9)(undefined);
 
 
 // module
-exports.push([module.i, "\n.datepicker {\r\n    display: inline-block;\n}\n.panel {\r\n    border: solid 1px #ccc;\n}\n.panel header {\r\n    background: #3ee;\n}\n.panel header>* {\r\n    background: transparent;\r\n    border: solid 1px #ccc;\r\n    font-weight: bold;\n}\n.text-year {\r\n    width: 100px;\n}\n.text-month {\r\n    width: 100px;\n}\n.text-year {\n}\n.date table {\r\n    width: 100%;\r\n    border-collapse: collapse;\n}\n.date table thead {\r\n    background: #8ff;\n}\n.date table tbody {\r\n    background: #cff;\n}\n.panel footer {\r\n    background: #3ff;\r\n    text-align: right;\n}\n.des {\r\n    width: 50px;\n}\r\n", ""]);
+exports.push([module.i, "\n.datepicker {\r\n    display: inline-block;\n}\n.panel {\r\n    border: solid 1px #ccc;\n}\n.panel header {\r\n    background: #3ee;\n}\n.panel header>* {\r\n    background: transparent;\r\n    border: solid 1px #ccc;\r\n    font-weight: bold;\n}\n.text-year {\r\n    width: 100px;\n}\n.text-month {\r\n    width: 100px;\n}\n.text-year {\n}\n.date table {\r\n    width: 100%;\r\n    border-collapse: collapse;\n}\n.date table thead {\r\n    background: #8ff;\n}\n.date table tbody {\r\n    background: #cff;\n}\n.panel footer {\r\n    background: #3ff;\r\n    text-align: right;\n}\n.des {\r\n    width: 50px;\n}\n.gray {\r\n    color: #999;\n}\ntd {\r\n    padding-left: 10px;\n}\ntd:hover {\r\n    cursor: pointer;\r\n    background: #3ee;\n}\n.selected {\r\n    background: #3ee;\n}\r\n", ""]);
 
 // exports
 
@@ -11753,12 +11753,6 @@ module.exports = function normalizeComponent (
 //
 //
 //
-//
-//
-//
-//
-//
-//
 
 /* harmony default export */ __webpack_exports__["a"] = ({
     props: ['name'],
@@ -11818,56 +11812,86 @@ module.exports = function normalizeComponent (
                 date: date
             };
         },
-        getDates(year, month, day, date) {
-            var curDate = this.getDate(year, month, date);
-            var dateCount = this.getDatesCount(year, month, date);
-
+        getDates({ curDate, dateCount }) {
+            console.log(curDate);
+            var { year, month, day, date } = curDate;
             var dates = [];
             for (var i = 1; i <= dateCount; i++) {
-                new Date().setDate(i);
-                var oDate = this.getCellDate(year, month + 1, day, curDate.getDate());
+                curDate.setDate(i);
+                var oDate = this.getCellDate(year, month, curDate.getDay(), curDate.getDate());
 
                 dates.push(oDate);
             }
 
-            console.log(dates);
-
-            var lastMonthDateCount = this.getDatesCount(year, month - 1);
+            var preMonth = month - 1;
+            var preMonthDateCount = this.getDatesCount(year, preMonth);
             var firstDay = dates[0].day;
-            for (;; firstDay--) {
-                var oDate = this.getCellDate(year, month - 1, firstDay, lastMonthDateCount--);
+            var l = 7 + firstDay;
+            for (; --l;) {
+                var oDate = this.getCellDate(year, preMonth, l % 7, preMonthDateCount--);
                 dates.unshift(oDate);
             }
 
             var nextMonthStart = 1;
-            var endDay = dates[this.dates.length - 1].day;
-            for (; nextDay <= 7; endDay++) {
-                var oDate = this.getCellDate(year, month + 1, endDay, nextMonthStart++);
-                dates.unshift(oDate);
+            var nextMonth = month + 1;
+            var endDay = dates[dates.length - 1].day;
+            var r = 49 - dates.length;
+            for (; r--;) {
+                var oDate = this.getCellDate(year, nextMonth, endDay % 7, nextMonthStart++);
+                dates.push(oDate);
             }
+
+            return dates;
+        },
+        isSameMonth(month) {
+            return month !== this.month;
+        },
+        isSelectedDate(date) {
+            return date === this.date;
+        },
+        onSelectDate(d) {
+            console.log(d.year, d.month, d.date);
+
+            var { year, month, day, date } = d;
+            this.fillDates(d);
+        },
+        fillDates(onedate) {
+            var { year, month, day, date } = onedate;
+
+            console.log(year, month, day, date);
+            var curDate = this.getDate(year, month, date);
+            var dateCount = this.getDatesCount(year, month, date);
+            var dates = this.getDates({ curDate, dateCount });
+
+            this.year = curDate.getYear();
+            this.month = curDate.getMonth();
+            this.day = curDate.getDay();
+            this.date = curDate.getDate();
+
+            var t = [];
+            this.dates = [];
+            dates.forEach((el, i) => {
+                t.push(el);
+                if (i !== 0 && (i + 1) % 7 === 0) {
+                    this.dates.push(t);
+                    t = [];
+                }
+            });
+        }
+    },
+    computed: {
+        selectedDate() {
+            return this.year + 1900 + '-' + (this.month + 1) + '-' + this.date;
         }
     },
     mounted() {
         var date = new Date();
-        this.year = 1900 + date.getYear();
-        this.month = date.getMonth();
-        this.day = date.getDay();
-        this.date = date.getDate();
-
-        var dates = this.getDates(this.year, this.month, this.day, this.date);
-
-        var t = [];
-        this.dates = [];
-        dates.forEach((el, i) => {
-            if (i !== 0 && i % 7 === 0) {
-                this.dates.push(t);
-                t = [];
-            }
-            t.push(el);
+        this.fillDates({
+            year: date.getFullYear(),
+            month: date.getMonth(),
+            day: date.getDay(),
+            date: date.getDate()
         });
-
-        console.log(this.dates);
-        console.log('mounted');
     }
 });
 
@@ -11881,7 +11905,10 @@ var render = function() {
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
   return _c("div", { staticClass: "datepicker" }, [
-    _c("input", { attrs: { type: "text", name: _vm.name } }),
+    _c("input", {
+      attrs: { type: "text", name: _vm.name },
+      domProps: { value: _vm.selectedDate }
+    }),
     _vm._v(" "),
     _c("div", { staticClass: "panel" }, [
       _c("header", [
@@ -11906,7 +11933,49 @@ var render = function() {
         _c("button", [_vm._v(">>|")])
       ]),
       _vm._v(" "),
-      _vm._m(0),
+      _c("div", { staticClass: "main" }, [
+        _c("div", { staticClass: "year" }),
+        _vm._v(" "),
+        _c("div", { staticClass: "month" }),
+        _vm._v(" "),
+        _c("div", { staticClass: "date" }, [
+          _c("table", [
+            _vm._m(0),
+            _vm._v(" "),
+            _c(
+              "tbody",
+              _vm._l(_vm.dates, function(days) {
+                return _c(
+                  "tr",
+                  { staticClass: "row" },
+                  [
+                    _c("td"),
+                    _vm._v(" "),
+                    _vm._l(days, function(d) {
+                      return _c(
+                        "td",
+                        {
+                          class: {
+                            gray: _vm.isSameMonth(d.month),
+                            selected: _vm.isSelectedDate(d.date)
+                          },
+                          on: {
+                            click: function($event) {
+                              _vm.onSelectDate(d)
+                            }
+                          }
+                        },
+                        [_vm._v(_vm._s(d.date))]
+                      )
+                    })
+                  ],
+                  2
+                )
+              })
+            )
+          ])
+        ])
+      ]),
       _vm._v(" "),
       _vm._m(1)
     ])
@@ -11917,53 +11986,23 @@ var staticRenderFns = [
     var _vm = this
     var _h = _vm.$createElement
     var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "main" }, [
-      _c("div", { staticClass: "year" }),
-      _vm._v(" "),
-      _c("div", { staticClass: "month" }),
-      _vm._v(" "),
-      _c("div", { staticClass: "date" }, [
-        _c("table", [
-          _c("thead", [
-            _c("tr", { staticClass: "row-header" }, [
-              _c("th", { staticClass: "des" }, [_vm._v("星期")]),
-              _vm._v(" "),
-              _c("th", [_vm._v("日")]),
-              _vm._v(" "),
-              _c("th", [_vm._v("一")]),
-              _vm._v(" "),
-              _c("th", [_vm._v("二")]),
-              _vm._v(" "),
-              _c("th", [_vm._v("三")]),
-              _vm._v(" "),
-              _c("th", [_vm._v("四")]),
-              _vm._v(" "),
-              _c("th", [_vm._v("五")]),
-              _vm._v(" "),
-              _c("th", [_vm._v("六")])
-            ])
-          ]),
-          _vm._v(" "),
-          _c("tbody", [
-            _c("tr", { staticClass: "row" }, [
-              _c("td"),
-              _vm._v(" "),
-              _c("td"),
-              _vm._v(" "),
-              _c("td"),
-              _vm._v(" "),
-              _c("td"),
-              _vm._v(" "),
-              _c("td"),
-              _vm._v(" "),
-              _c("td"),
-              _vm._v(" "),
-              _c("td"),
-              _vm._v(" "),
-              _c("td")
-            ])
-          ])
-        ])
+    return _c("thead", [
+      _c("tr", { staticClass: "row-header" }, [
+        _c("th", { staticClass: "des" }, [_vm._v("星期")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("日")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("一")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("二")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("三")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("四")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("五")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("六")])
       ])
     ])
   },
