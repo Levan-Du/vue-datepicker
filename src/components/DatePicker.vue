@@ -6,9 +6,9 @@
                 <button>|&lt;&lt;</button>
                 <button>&lt;</button>
                 <input class="text-month" type="text" name="month" :value="month+1">
-                <input class="text-year" type="text" name="year" :value="year">
                 <button>&gt;</button>
                 <button>&gt;&gt;|</button>
+                <input class="text-year" type="text" name="year" :value="year">
             </header>
             <div class="main">
                 <div class="year"></div>
@@ -150,7 +150,6 @@ export default {
             })
         },
         fillDates({ year, month, day, date }) {
-            console.log(year, month, date)
             var curDate = this.newDate(year, month, date)
             var dateCount = this.getDatesCount(year, month)
             var dates = this.getDates({ year, month, day, date, dateCount })
@@ -159,7 +158,6 @@ export default {
             this.month = curDate.getMonth()
             this.day = curDate.getDay()
             this.date = curDate.getDate()
-            console.log(curDate.getDate())
 
             var t = []
             this.dates = []

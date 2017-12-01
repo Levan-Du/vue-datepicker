@@ -11252,7 +11252,7 @@ exports = module.exports = __webpack_require__(9)(undefined);
 
 
 // module
-exports.push([module.i, "\n.datepicker {\r\n    display: inline-block;\n}\n.panel {\r\n    border: solid 1px #ccc;\n}\n.panel header {\r\n    background: #3ee;\n}\n.panel header>* {\r\n    background: transparent;\r\n    border: solid 1px #ccc;\r\n    font-weight: bold;\n}\n.text-year {\r\n    width: 100px;\n}\n.text-month {\r\n    width: 100px;\n}\n.text-year {\n}\n.date table {\r\n    width: 100%;\r\n    border-collapse: collapse;\n}\n.date table thead {\r\n    background: #8ff;\n}\n.date table tbody {\r\n    background: #cff;\n}\n.panel footer {\r\n    background: #3ff;\r\n    text-align: right;\n}\n.des {\r\n    width: 50px;\n}\n.gray {\r\n    color: #999;\n}\ntd {\r\n    padding-left: 10px;\n}\ntd:hover {\r\n    cursor: pointer;\r\n    background: #3ee;\n}\n.selected {\r\n    background: #3ee;\n}\r\n", ""]);
+exports.push([module.i, "\n.datepicker {\r\n    display: inline-block;\n}\n.panel {\r\n    border: solid 1px #ccc;\n}\n.panel header {\r\n    background: #3ee;\n}\n.panel header>* {\r\n    background: transparent;\r\n    border: solid 1px #ccc;\r\n    font-weight: bold;\n}\n.text-year {\r\n    width: 100px;\n}\n.text-month {\r\n    width: 100px;\n}\n.date table {\r\n    width: 100%;\r\n    border-collapse: collapse;\n}\n.date table thead {\r\n    background: #8ff;\n}\n.date table tbody {\r\n    background: #cff;\n}\n.panel footer {\r\n    background: #3ff;\r\n    text-align: right;\n}\n.des {\r\n    width: 30px;\n}\n.gray {\r\n    color: #999;\n}\ntd {\r\n    padding-left: 10px;\n}\ntd:hover {\r\n    cursor: pointer;\r\n    background: #3ee;\n}\n.selected {\r\n    background: #3ee;\n}\r\n", ""]);
 
 // exports
 
@@ -11767,15 +11767,11 @@ module.exports = function normalizeComponent (
     },
     methods: {
         keyup() {},
-        getDate(year, month, date) {
-            var curDate = new Date();
-            curDate.setFullYear(year);
-            curDate.setMonth(month);
-            curDate.setDate(date);
-            return curDate;
+        newDate(year, month, date) {
+            return new Date(year, month, date);
         },
-        getDatesCount(year, month, date = 1) {
-            var curDate = this.getDate(year, month, date);
+        getDatesCount(year, month) {
+            var curDate = this.newDate(year, month, 1);
 
             /*  生成实际的月份: 由于curMonth会比实际月份小1, 故需加1 */
             curDate.setMonth(month + 1);
@@ -11812,9 +11808,8 @@ module.exports = function normalizeComponent (
                 date: date
             };
         },
-        getDates({ curDate, dateCount }) {
-            console.log(curDate);
-            var { year, month, day, date } = curDate;
+        getDates({ year, month, day, date, dateCount }, maxDate = 49) {
+            var curDate = this.newDate(year, month, date);
             var dates = [];
             for (var i = 1; i <= dateCount; i++) {
                 curDate.setDate(i);
@@ -11823,8 +11818,10 @@ module.exports = function normalizeComponent (
                 dates.push(oDate);
             }
 
-            var preMonth = month - 1;
-            var preMonthDateCount = this.getDatesCount(year, preMonth);
+            var preDate = this.newDate(year, month - 1, 1);
+            var preYear = preDate.getFullYear();
+            var preMonth = preDate.getMonth();
+            var preMonthDateCount = this.getDatesCount(preYear, preMonth);
             var firstDay = dates[0].day;
             var l = 7 + firstDay;
             for (; --l;) {
@@ -11833,40 +11830,43 @@ module.exports = function normalizeComponent (
             }
 
             var nextMonthStart = 1;
-            var nextMonth = month + 1;
+            var nextDate = this.newDate(year, month + 1, 1);
+            var nextMonth = nextDate.getMonth();
+            var nextYear = nextDate.getFullYear();
             var endDay = dates[dates.length - 1].day;
-            var r = 49 - dates.length;
-            for (; r--;) {
-                var oDate = this.getCellDate(year, nextMonth, endDay % 7, nextMonthStart++);
+            var nextLen = maxDate - dates.length;
+            for (; nextLen--;) {
+                var oDate = this.getCellDate(nextYear, nextMonth, endDay % 7, nextMonthStart++);
                 dates.push(oDate);
             }
 
             return dates;
         },
-        isSameMonth(month) {
-            return month !== this.month;
+        isSameMonth({ year, month }) {
+            return !(year == this.year && month == this.month);
         },
-        isSelectedDate(date) {
-            return date === this.date;
+        isSelectedDate({ year, month, date }) {
+            return year == this.year && month == this.month && date == this.date;
         },
         onSelectDate(d) {
-            console.log(d.year, d.month, d.date);
-
-            var { year, month, day, date } = d;
-            this.fillDates(d);
+            this.fillDates({
+                year: d.year,
+                month: d.month,
+                day: d.day,
+                date: d.date
+            });
         },
-        fillDates(onedate) {
-            var { year, month, day, date } = onedate;
+        fillDates({ year, month, day, date }) {
+            console.log(year, month, date);
+            var curDate = this.newDate(year, month, date);
+            var dateCount = this.getDatesCount(year, month);
+            var dates = this.getDates({ year, month, day, date, dateCount });
 
-            console.log(year, month, day, date);
-            var curDate = this.getDate(year, month, date);
-            var dateCount = this.getDatesCount(year, month, date);
-            var dates = this.getDates({ curDate, dateCount });
-
-            this.year = curDate.getYear();
+            this.year = curDate.getFullYear();
             this.month = curDate.getMonth();
             this.day = curDate.getDay();
             this.date = curDate.getDate();
+            console.log(curDate.getDate());
 
             var t = [];
             this.dates = [];
@@ -11881,7 +11881,7 @@ module.exports = function normalizeComponent (
     },
     computed: {
         selectedDate() {
-            return this.year + 1900 + '-' + (this.month + 1) + '-' + this.date;
+            return this.year + '-' + (this.month + 1) + '-' + this.date;
         }
     },
     mounted() {
@@ -11919,18 +11919,18 @@ var render = function() {
         _c("input", {
           staticClass: "text-month",
           attrs: { type: "text", name: "month" },
-          domProps: { value: _vm.month }
+          domProps: { value: _vm.month + 1 }
         }),
+        _vm._v(" "),
+        _c("button", [_vm._v(">")]),
+        _vm._v(" "),
+        _c("button", [_vm._v(">>|")]),
         _vm._v(" "),
         _c("input", {
           staticClass: "text-year",
           attrs: { type: "text", name: "year" },
           domProps: { value: _vm.year }
-        }),
-        _vm._v(" "),
-        _c("button", [_vm._v(">")]),
-        _vm._v(" "),
-        _c("button", [_vm._v(">>|")])
+        })
       ]),
       _vm._v(" "),
       _c("div", { staticClass: "main" }, [
@@ -11956,8 +11956,8 @@ var render = function() {
                         "td",
                         {
                           class: {
-                            gray: _vm.isSameMonth(d.month),
-                            selected: _vm.isSelectedDate(d.date)
+                            gray: _vm.isSameMonth(d),
+                            selected: _vm.isSelectedDate(d)
                           },
                           on: {
                             click: function($event) {
@@ -11988,9 +11988,7 @@ var staticRenderFns = [
     var _c = _vm._self._c || _h
     return _c("thead", [
       _c("tr", { staticClass: "row-header" }, [
-        _c("th", { staticClass: "des" }, [_vm._v("星期")]),
-        _vm._v(" "),
-        _c("th", [_vm._v("日")]),
+        _c("th", { staticClass: "des" }, [_vm._v("周")]),
         _vm._v(" "),
         _c("th", [_vm._v("一")]),
         _vm._v(" "),
@@ -12002,7 +12000,9 @@ var staticRenderFns = [
         _vm._v(" "),
         _c("th", [_vm._v("五")]),
         _vm._v(" "),
-        _c("th", [_vm._v("六")])
+        _c("th", [_vm._v("六")]),
+        _vm._v(" "),
+        _c("th", [_vm._v("日")])
       ])
     ])
   },
